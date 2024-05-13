@@ -3,9 +3,13 @@ import torch
 from .data.charset import CharSet, MAX_SEQUENCE_LENGTH, EOS_TOKEN
 
 
-def inference(word, encoder, decoder, lang):
+def inference(word, lang):
+
     src_char2idx = CharSet(language='eng').char2index
     trg_idx2char = CharSet(language=lang).index2char
+
+    encoder = torch.load("./model/outputs/encoder.h5")
+    decoder = torch.load("./model/outputs/decoder.h5")
     
     with torch.no_grad():
         input_tensor = input_tensor = torch.zeros((1, MAX_SEQUENCE_LENGTH), dtype=torch.long)
@@ -18,11 +22,12 @@ def inference(word, encoder, decoder, lang):
         _, topi = decoder_outputs.topk(1)
         decoded_ids = topi.squeeze()
 
-        decoded_word = []
+        word = []
         for idx in decoded_ids:
             if idx.item() == EOS_TOKEN:
                 decoded_word.append('$')
                 break
-            decoded_word.append(idx.item())
-    return decoded_word, decoder_attn 
+            word.append(idx.item())
+        decoded_word = "".join([trg_idx2char.get(char) for char in word])
+    return word, decoded_word, decoder_attn 
     
