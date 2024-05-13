@@ -8,10 +8,11 @@ from .model.encoder import Encoder
 from .model.decoder import Decoder
 from .utils.helpers import *
 
-def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, criterion):
+def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, criterion, device):
     total_loss = 0
     for data in dataloader:
         input_tensor, target_tensor = data
+        (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
 
         enc_optimizer.zero_grad()
         dec_optimizer.zero_grad()
@@ -32,10 +33,11 @@ def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, crit
 
     return total_loss / len(dataloader)
 
-def val_epoch(dataloader, encoder, decoder, criterion):
+def val_epoch(dataloader, encoder, decoder, criterion, device):
     total_loss = 0
     for data in dataloader:
         input_tensor, target_tensor = data
+        (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
         
         encoder_outputs, encoder_hidden = encoder(input_tensor)
         decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
@@ -68,7 +70,10 @@ def train(config):
     beam_size = config['beam_size']
     
     print("Loading data...")
-
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.cuda.empty_cache()
+    
     dataset = TransliterationDataset(src_lang='eng', trg_lang=lang)    
     train_dataloader = DataLoader(dataset.train_dataset, batch_size=batch_size, shuffle=True)
     valid_dataloader = DataLoader(dataset.valid_dataset, batch_size=batch_size, shuffle=True)  
@@ -78,12 +83,12 @@ def train(config):
     encoder = Encoder(input_size=dataset.src_charset.get_length(), embedding_size=embedding_size, 
                       hidden_size=hidden_size, cell_type = cell_type, num_layers = num_layers_encoder,
                       bidirectional =bidirectional,
-                      dropout = dropout, device='cpu') 
+                      dropout = dropout, device='cpu').to(device) 
     
     decoder =  Decoder(output_size=dataset.trg_charset.get_length(), hidden_size=hidden_size,
                        cell_type = cell_type, num_layers = num_layers_decoder,
                        bidirectional =bidirectional, use_attention= use_attention,
-                       dropout = dropout, device='cpu')
+                       dropout = dropout, device='cpu').to(device)
     
     log_frequency = 1
     start = time.time()
@@ -102,14 +107,14 @@ def train(config):
     for epoch in range(1, epochs + 1):
         encoder.train()
         decoder.train()
-        loss = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion)
+        loss = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, device)
         training_loss.append(loss)
         loss_train += loss
         
         with torch.no_grad():
             encoder.eval()
             decoder.eval()
-            loss = val_epoch(valid_dataloader, encoder, decoder, criterion)
+            loss = val_epoch(valid_dataloader, encoder, decoder, criterion, device)
             validation_loss.append(loss)
             loss_valid += loss
         

@@ -1,5 +1,3 @@
-import torch
-
 from src.train import *
 from src.inference import *
 
@@ -18,8 +16,6 @@ network_config = {
     'lang': 'tam',
     'use_attention': False
 }
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # encoder, decoder, training_loss, validation_loss = train(network_config)
 
