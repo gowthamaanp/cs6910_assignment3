@@ -20,8 +20,8 @@ class TransliterationDataset(Dataset):
         corpus_test = pd.read_csv(f"././data/aksharantar_sampled/{trg_lang}/{trg_lang}_test.csv",  header=None)
         corpus_valid = pd.read_csv(f"././data/aksharantar_sampled/{trg_lang}/{trg_lang}_valid.csv",  header=None)
         
-        src_charset = CharSet(name=src_lang)
-        trg_charset = CharSet(name=trg_lang)
+        self.src_charset = CharSet(name=src_lang)
+        self.trg_charset = CharSet(name=trg_lang)
         
         self.src_words, self.trg_words = corpus_train.iloc[:, 0], corpus_train.iloc[:, 1]
         self.train_dataset = self.build_dataset(corpus_train, src_charset, trg_charset)

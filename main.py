@@ -8,15 +8,17 @@ network_config = {
     'embedding_size': 16,
     'en_layers': 3,
     'de_layers': 1,
-    'hi_layers': 1,
+    'hidden_size': 1,
     'cell': 2,
     'bidirectional': 512,
     'dropout': 10,
-    'beam_search': "relu",
+    'beam_search': False,
     'learning_rate': 1e-4,
     'batch_size': 16,
     'epochs': 10,
-    'lang': 'tam'
+    'lang': 'tam',
+    'teach_ratio': 0,
+    'attention': False
 }
 
 parser = argparse.ArgumentParser()

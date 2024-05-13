@@ -1,24 +1,38 @@
+import torch
+
+from .data.dataset import TransliterationDataset
+from .model.seq2seq import Seq2SeqModel
+
 def train(config):
 
-    learn_rate = config['learn_rate']
+    learn_rate = config['learning_rate']
     batch_size = config['batch_size']
     hidden_size = config['hidden_size']
     embedding_size = config['embedding_size']
-    num_layers_encoder = config['num_layers_encoder']
-    num_layers_decoder = config['num_layers_decoder']
-    cell_type = config['cell_type']
+    num_layers_encoder = config['en_layers']
+    num_layers_decoder = config['de_layers']
+    cell_type = config['cell']
     bidirectional = config['bidirectional']
     dropout = config['dropout']
     teach_ratio = config['teach_ratio']
     epochs = config['epochs']
     attention = config['attention']
+    lang = config['lang']
+    beam_search = config['beam_search']
+    attention = config['attention']
 
-    input_len = ipLang.n_chars
-    output_len = opLang.n_chars
-    
-    encoder = EncoderRNN(input_len, hidden_size, embedding_size, 
-                 num_layers_encoder, cell_type,
-                  bidirectional, dropout, batch_size)
+    dataset = TransliterationDataset(src_lang='eng', trg_lang=lang)
+
+    model = Seq2SeqModel(
+                input_size=dataset.src_charset.get_length(),
+                dropout=dropout,
+                hidden_dim=hidden_size,
+                embedding_dim=embedding_size, 
+                en_layers=num_layers_encoder, 
+                de_layers= num_layers_decoder,
+                cell_type= cell_type, 
+                bidirectional=bidirectional
+            )
     
     train_loader = DataLoader(trainData, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(valData, batch_size=batch_size, shuffle=True)

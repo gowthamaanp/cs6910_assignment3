@@ -17,3 +17,6 @@ class CharSet:
             idx = index+2
             self.char2index[char] = idx
             self.index2char[idx] = char
+    
+    def get_length(self):
+        return len(self.char2index)
