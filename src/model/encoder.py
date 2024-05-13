@@ -1,41 +1,41 @@
-import torch
 import torch.nn as nn
-import random
 
 class Encoder(nn.Module):
 
-    def __init__(self, input_dim, embed_dim, hidden_dim ,
-                       cell_type = 'gru', layers = 1,
+    def __init__(self, input_size, embedding_size, hidden_size ,
+                       cell_type = 'gru', num_layers = 1,
                        bidirectional =False,
-                       dropout = 0):
+                       dropout = 0, device=None):
         super(Encoder, self).__init__()
 
-        self.input_dim = input_dim
-        self.enc_embed_dim = embed_dim
-        self.enc_hidden_dim = hidden_dim
-        self.enc_rnn_type = cell_type
-        self.enc_layers = layers
-        self.enc_directions = 2 if bidirectional else 1
+        self.input_size = input_size
+        self.embedding_size = embedding_size
+        self.hidden_size = hidden_size
+        self.cell_type = cell_type
+        self.num_layers = num_layers
+        self.device = device
 
-        self.embedding = nn.Embedding(self.input_dim, self.enc_embed_dim)
+        self.embedding = nn.Embedding(self.input_size, self.embedding_size)
+        
+        self.dropout = nn.Dropout(dropout)
 
-        if self.enc_rnn_type == "gru":
-            self.enc_rnn = nn.GRU(input_size= self.enc_embed_dim,
-                          hidden_size= self.enc_hidden_dim,
-                          num_layers= self.enc_layers,
-                          bidirectional= bidirectional, dropout=dropout)
-        elif self.enc_rnn_type == "lstm":
-            self.enc_rnn = nn.LSTM(input_size= self.enc_embed_dim,
-                          hidden_size= self.enc_hidden_dim,
-                          num_layers= self.enc_layers,
-                          bidirectional= bidirectional, dropout=dropout)
+        if self.cell_type == 'gru':
+            self.enc_rnn = nn.GRU(input_size= self.embedding_size,
+                          hidden_size= self.hidden_size,
+                          num_layers= self.num_layers,
+                          bidirectional= bidirectional, batch_first=True)
+        elif self.cell_type == 'lstm':
+            self.enc_rnn = nn.LSTM(input_size= self.embedding_size,
+                          hidden_size= self.hidden_size,
+                          num_layers= self.num_layers,
+                          bidirectional= bidirectional, batch_first=True)
         else:
-            self.enc_rnn = nn.RNN(input_size= self.enc_embed_dim,
-                          hidden_size= self.enc_hidden_dim,
-                          num_layers= self.enc_layers,
-                          bidirectional= bidirectional, dropout=dropout)
+            self.enc_rnn = nn.RNN(input_size= self.embedding_size,
+                          hidden_size= self.hidden_size,
+                          num_layers= self.num_layers,
+                          bidirectional= bidirectional, batch_first=True)
 
-    def forward(self, x, hidden = None):
-        x = self.embedding(x)
-        output, hidden = self.enc_rnn(x)
+    def forward(self, data):
+        embedded = self.dropout(self.embedding(data))
+        output, hidden = self.enc_rnn(embedded)
         return output, hidden

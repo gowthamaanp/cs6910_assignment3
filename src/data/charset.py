@@ -1,8 +1,10 @@
+from ..utils.config import *
+
 class CharSet:
-    def __init__(self, name):
-        self.name = name
-        self.char2index = {'#': 0, '$': 1}
-        self.index2char = {0: '#', 1: '$'}
+    def __init__(self, language):
+        self.lanugage = language
+        self.char2index = {'^': SOS_TOKEN, '$': EOS_TOKEN, '#': PAD_TOKEN}
+        self.index2char = {SOS_TOKEN: '^', EOS_TOKEN: '$', PAD_TOKEN: '#'}
         self._unicode_range = {
             'eng': (97, 122),
             'tam': (2944, 3071),
@@ -11,7 +13,7 @@ class CharSet:
         self._build_charset()
     
     def _build_charset(self):
-        unicode_range = self._unicode_range[self.name]
+        unicode_range = self._unicode_range[self.lanugage]
         chars = [chr(char) for char in range(unicode_range[0], unicode_range[1]+1)]
         for index, char in enumerate(chars):
             idx = index+2
