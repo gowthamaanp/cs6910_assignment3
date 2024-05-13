@@ -83,7 +83,7 @@ class Decoder(nn.Module):
             input_rnn = torch.cat((embedded, context), dim=2)
         else:
             attn_weights = None
-            input_rnn = F.relu(embedded)
+            input_rnn = embedded
         output, hidden = self.dec_rnn(input_rnn, hidden)
         output = self.out(output)
         return output, hidden, attn_weights

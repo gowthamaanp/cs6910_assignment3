@@ -10,6 +10,8 @@ def inference(word, lang):
 
     encoder = torch.load("./model/outputs/encoder.h5")
     decoder = torch.load("./model/outputs/decoder.h5")
+    encoder.eval()
+    decoder.eval()
     
     with torch.no_grad():
         input_tensor = input_tensor = torch.zeros((1, MAX_SEQUENCE_LENGTH), dtype=torch.long)
@@ -28,5 +30,6 @@ def inference(word, lang):
                 break
             word.append(idx.item())
         decoded_word = "".join([trg_idx2char.get(char) for char in word])
+        decoded_word = decoded_word.replace("#", "")
     return word, decoded_word, decoder_attn 
     
