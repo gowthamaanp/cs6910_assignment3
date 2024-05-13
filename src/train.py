@@ -80,7 +80,7 @@ def train(config):
     
     print("Loading data...")
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     torch.cuda.empty_cache()
     
     dataset = TransliterationDataset(src_lang='eng', trg_lang=lang)    

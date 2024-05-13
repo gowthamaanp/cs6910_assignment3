@@ -7,7 +7,6 @@ def inference(word, lang):
 
     src_char2idx = CharSet(language='eng').char2index
     trg_idx2char = CharSet(language=lang).index2char
-    print(trg_idx2char.get(2))
 
     encoder = torch.load("./model/outputs/encoder.h5")
     decoder = torch.load("./model/outputs/decoder.h5")
