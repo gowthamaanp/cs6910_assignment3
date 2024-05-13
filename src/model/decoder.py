@@ -50,7 +50,7 @@ class Decoder(nn.Module):
         decoder_outputs = []
         attentions = []
 
-        for i in range(MAX_SEQUENCE_LENGTH):
+        for i in range(0, MAX_SEQUENCE_LENGTH):
             decoder_output, decoder_hidden, attn_weights = self.forward_step(
                 decoder_input, decoder_hidden, encoder_outputs
             )

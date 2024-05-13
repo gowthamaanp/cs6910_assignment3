@@ -10,6 +10,7 @@ from .utils.helpers import *
 
 def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, criterion, device):
     total_loss = 0
+    total_accuracy = 0
     for data in dataloader:
         input_tensor, target_tensor = data
         (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
@@ -19,37 +20,45 @@ def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, crit
 
         encoder_outputs, encoder_hidden = encoder(input_tensor)
         decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
+        predicted_tensor = torch.argmax(decoder_outputs, dim=2)
 
         loss = criterion(
             decoder_outputs.view(-1, decoder_outputs.size(-1)),
             target_tensor.view(-1)
         )
         loss.backward()
-
         enc_optimizer.step()
         dec_optimizer.step()
+    
+        correct = torch.eq(predicted_tensor, target_tensor).float().sum()
+        accuracy = correct / len(target_tensor)
 
         total_loss += loss.item()
-
-    return total_loss / len(dataloader)
+        total_accuracy += accuracy.item()
+    return total_loss / len(dataloader), total_accuracy/len(dataloader)
 
 def val_epoch(dataloader, encoder, decoder, criterion, device):
     total_loss = 0
+    total_accuracy = 0
     for data in dataloader:
         input_tensor, target_tensor = data
         (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
         
         encoder_outputs, encoder_hidden = encoder(input_tensor)
         decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
+        predicted_tensor = torch.argmax(decoder_outputs, dim=2)
 
         loss = criterion(
             decoder_outputs.view(-1, decoder_outputs.size(-1)),
             target_tensor.view(-1)
         )
+        correct = torch.eq(predicted_tensor, target_tensor).float().sum()
+        accuracy = correct / len(target_tensor)
     
         total_loss += loss.item()
+        total_accuracy += accuracy.item()
 
-    return total_loss / len(dataloader)
+    return total_loss / len(dataloader), total_accuracy/len(dataloader)
 
 def train(config):
     
@@ -94,9 +103,13 @@ def train(config):
     start = time.time()
     training_loss = []
     validation_loss = []
+    training_accuracy = []
+    validation_accuracy = []
     
     loss_train = 0
     loss_valid = 0
+    accuracy_train = 0
+    accuracy_valid = 0
     
     encoder_optimizer = Adam(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = Adam(decoder.parameters(), lr=learning_rate)
@@ -107,21 +120,30 @@ def train(config):
     for epoch in range(1, epochs + 1):
         encoder.train()
         decoder.train()
-        loss = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, device)
+        loss, accuracy = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, device)
         training_loss.append(loss)
+        training_accuracy.append(accuracy)
         loss_train += loss
+        accuracy_train +=accuracy
         
         with torch.no_grad():
             encoder.eval()
             decoder.eval()
-            loss = val_epoch(valid_dataloader, encoder, decoder, criterion, device)
+            loss, accuracy = val_epoch(valid_dataloader, encoder, decoder, criterion, device)
             validation_loss.append(loss)
+            validation_accuracy.append(accuracy)
             loss_valid += loss
+            accuracy_valid +=accuracy
         
         if epoch % log_frequency == 0:
-            train_avg = loss_train / log_frequency
-            valid_avg = loss_valid / log_frequency
-            print('%s (%d %d%%) training: %.4f validation: %.4f' % (timeSince(start, epoch / epochs), epoch, epoch / epochs * 100, train_avg, valid_avg))
+            train_loss_avg = loss_train / log_frequency
+            valid_loss_avg = loss_valid / log_frequency
+            train_accuracy_avg = accuracy_train / log_frequency
+            valid_accuracy_avg = accuracy_valid / log_frequency
+            print('%s (%d %d%%) Loss T: %.4f V: %.4f Accuracy T: %.4f V: %.4f' % (timeSince(start, epoch / epochs), 
+                                    epoch, epoch / epochs * 100, train_loss_avg, valid_loss_avg, train_accuracy_avg, valid_accuracy_avg))
             loss_train = 0
             loss_valid = 0
+            accuracy_train = 0
+            accuracy_valid = 0
     return encoder, decoder, training_loss, validation_loss

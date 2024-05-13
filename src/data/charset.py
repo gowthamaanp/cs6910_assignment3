@@ -16,7 +16,7 @@ class CharSet:
         unicode_range = self._unicode_range[self.lanugage]
         chars = [chr(char) for char in range(unicode_range[0], unicode_range[1]+1)]
         for index, char in enumerate(chars):
-            idx = index+2
+            idx = index+3
             self.char2index[char] = idx
             self.index2char[idx] = char
     

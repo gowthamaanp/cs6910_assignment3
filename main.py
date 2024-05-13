@@ -17,10 +17,10 @@ network_config = {
     'use_attention': False
 }
 
-# encoder, decoder, training_loss, validation_loss = train(network_config)
+encoder, decoder, training_loss, validation_loss = train(network_config)
 
-# torch.save(encoder, "encoder.h5")
-# torch.save(decoder, "decoder.h5")
+torch.save(encoder, "model/outputs/encoder.h5")
+torch.save(decoder, "model/outputs/decoder.h5")
 
 tensor, word, _ = inference("seenivasa", network_config['lang'])
 print(tensor)
