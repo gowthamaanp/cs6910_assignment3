@@ -8,9 +8,13 @@ from .model.encoder import Encoder
 from .model.decoder import Decoder
 from .utils.helpers import *
 
+def count_correct_words(y, y_pred):
+    return ((y==y_pred).sum(dim=0)==y.size(1)-1).sum()
+
 def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, criterion, device):
     total_loss = 0
-    total_accuracy = 0
+    total_char_accuracy = 0
+    total_word_accuracy = 0
     for data in dataloader:
         input_tensor, target_tensor = data
         (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
@@ -32,20 +36,23 @@ def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, crit
     
         correct = torch.eq(predicted_tensor, target_tensor).float().sum()
         accuracy = correct / len(target_tensor)
-
+        
+        total_word_accuracy += count_correct_words(target_tensor, predicted_tensor).item()
         total_loss += loss.item()
-        total_accuracy += accuracy.item()
-    return total_loss / len(dataloader), total_accuracy/len(dataloader)
+        total_char_accuracy += accuracy.item()
+        
+    return total_loss / len(dataloader), total_char_accuracy/len(dataloader), total_word_accuracy/len(dataloader)
 
 def val_epoch(dataloader, encoder, decoder, criterion, device):
     total_loss = 0
-    total_accuracy = 0
+    total_char_accuracy = 0
+    total_word_accuracy = 0
     for data in dataloader:
         input_tensor, target_tensor = data
         (input_tensor, target_tensor) = (input_tensor.to(device), target_tensor.to(device))
         
         encoder_outputs, encoder_hidden = encoder(input_tensor)
-        decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden, target_tensor)
+        decoder_outputs, _, _ = decoder(encoder_outputs, encoder_hidden)
         predicted_tensor = torch.argmax(decoder_outputs, dim=2)
 
         loss = criterion(
@@ -55,10 +62,11 @@ def val_epoch(dataloader, encoder, decoder, criterion, device):
         correct = torch.eq(predicted_tensor, target_tensor).float().sum()
         accuracy = correct / len(target_tensor)
     
+        total_word_accuracy += count_correct_words(target_tensor, predicted_tensor).item()
         total_loss += loss.item()
-        total_accuracy += accuracy.item()
-
-    return total_loss / len(dataloader), total_accuracy/len(dataloader)
+        total_char_accuracy += accuracy.item()
+        
+    return total_loss / len(dataloader), total_char_accuracy/len(dataloader), total_word_accuracy/len(dataloader)
 
 def train(config):
     
@@ -103,13 +111,17 @@ def train(config):
     start = time.time()
     training_loss = []
     validation_loss = []
-    training_accuracy = []
-    validation_accuracy = []
+    training_char_accuracy = []
+    training_word_accuracy = []
+    validation_char_accuracy = []
+    validation_word_accuracy = []
     
     loss_train = 0
     loss_valid = 0
-    accuracy_train = 0
-    accuracy_valid = 0
+    accuracy_char_train = 0
+    accuracy_char_valid = 0
+    accuracy_word_train = 0
+    accuracy_word_valid = 0
     
     encoder_optimizer = Adam(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = Adam(decoder.parameters(), lr=learning_rate)
@@ -120,30 +132,39 @@ def train(config):
     for epoch in range(1, epochs + 1):
         encoder.train()
         decoder.train()
-        loss, accuracy = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, device)
+        loss, char_accuracy, word_accuarcy = train_epoch(train_dataloader, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, device)
         training_loss.append(loss)
-        training_accuracy.append(accuracy)
+        training_word_accuracy.append(word_accuarcy)
+        training_char_accuracy.append(char_accuracy)
         loss_train += loss
-        accuracy_train +=accuracy
+        accuracy_word_train +=word_accuarcy
+        accuracy_char_train +=char_accuracy
         
         with torch.no_grad():
             encoder.eval()
             decoder.eval()
-            loss, accuracy = val_epoch(valid_dataloader, encoder, decoder, criterion, device)
+            loss, char_accuracy, word_accuarcy = val_epoch(valid_dataloader, encoder, decoder, criterion, device)
             validation_loss.append(loss)
-            validation_accuracy.append(accuracy)
+            validation_char_accuracy.append(char_accuracy)
+            validation_word_accuracy.append(word_accuarcy)
             loss_valid += loss
-            accuracy_valid +=accuracy
+            accuracy_char_valid +=char_accuracy
+            accuracy_word_valid +=word_accuarcy
         
         if epoch % log_frequency == 0:
             train_loss_avg = loss_train / log_frequency
             valid_loss_avg = loss_valid / log_frequency
-            train_accuracy_avg = accuracy_train / log_frequency
-            valid_accuracy_avg = accuracy_valid / log_frequency
-            print('%s (%d %d%%) Loss T: %.4f V: %.4f Accuracy T: %.4f V: %.4f' % (timeSince(start, epoch / epochs), 
-                                    epoch, epoch / epochs * 100, train_loss_avg, valid_loss_avg, train_accuracy_avg, valid_accuracy_avg))
+            train_accuracy_char_avg = accuracy_char_train / log_frequency
+            valid_accuracy_char_avg = accuracy_char_valid / log_frequency
+            train_accuracy_word_avg = accuracy_word_train / log_frequency
+            valid_accuracy_word_avg = accuracy_word_valid / log_frequency
+            print('%s (%d %d%%) Loss T: %.4f V: %.4f Character Accuracy T: %.4f V: %.4f Word Accuracy T: %.4f V: %.4f' % (timeSince(start, epoch / epochs), 
+                                    epoch, epoch / epochs * 100, train_loss_avg, valid_loss_avg, train_accuracy_char_avg, valid_accuracy_char_avg, train_accuracy_word_avg, 
+                                    valid_accuracy_word_avg))
             loss_train = 0
             loss_valid = 0
-            accuracy_train = 0
-            accuracy_valid = 0
-    return encoder, decoder, training_loss, validation_loss
+            accuracy_char_train = 0
+            accuracy_char_valid = 0
+            accuracy_word_train = 0
+            accuracy_word_valid = 0
+    return encoder, decoder, training_loss, validation_loss, [training_char_accuracy, training_word_accuracy], [validation_char_accuracy, validation_word_accuracy]
