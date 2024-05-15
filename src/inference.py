@@ -1,5 +1,5 @@
 import torch
-
+import pandas as pd
 from .data.charset import CharSet, MAX_SEQUENCE_LENGTH, PAD_TOKEN
 
 
@@ -34,5 +34,10 @@ def inference(word, lang):
                 break
             word.append(idx.item())
         decoded_word = "".join([trg_idx2char.get(char) for char in word])
-    return word, decoded_word, decoder_attn 
+        # Create an empty DataFrame
+    df = pd.DataFrame(columns=['Input', 'Transliterated Word'])
+
+    # Add a string to the DataFrame
+    df = df.append({'Input': word, 'Transliterated Word': decoded_word}, ignore_index=True)
+    return word, df, decoder_attn 
     

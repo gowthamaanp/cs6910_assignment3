@@ -1,7 +1,5 @@
 import argparse
 
-import torch
-
 from src.train import train
 from src.inference import inference
 from src.test import test
