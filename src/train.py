@@ -103,8 +103,9 @@ def train(config):
                       dropout = dropout).to(device) 
     
     decoder =  Decoder(output_size=dataset.trg_charset.get_length(), hidden_size=hidden_size,
-                       cell_type = cell_type, num_layers = num_layers_decoder,
-                       use_attention= use_attention, dropout = dropout, device = device).to(device)
+                       cell_type = cell_type, num_layers = num_layers_decoder, 
+                       bidirectional=bidirectional, use_attention= use_attention, 
+                       dropout = dropout, device = device).to(device)
     
     log_frequency = 1
     start = time.time()

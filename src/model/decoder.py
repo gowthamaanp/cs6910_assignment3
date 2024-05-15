@@ -8,17 +8,19 @@ from ..utils.config import *
 class Decoder(nn.Module):
     def __init__(self, output_size, hidden_size ,
                        cell_type = 'gru', num_layers = 1,
-                       use_attention =  False,
+                       use_attention =  False, bidirectional = False,
                        dropout = 0, device = 'cpu'):
         super(Decoder, self).__init__()
         
         # Initializing parameters
         self.output_size = output_size
         self.hidden_size = hidden_size
+        self.bidirectional = bidirectional
         self.cell_type = cell_type
         self.num_layers = num_layers  
         self.use_attention = use_attention 
         self.device = device   
+        self.input_size = (3 if self.use_attention and self.bidirectional else 2 if self.use_attention else 1)*self.hidden_size
         
         # Embedding layer to convert input indices to embeddings
         self.embedding = nn.Embedding(self.output_size, self.hidden_size)
@@ -27,21 +29,21 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
         
         # Bahdanau attention head
-        self.attention = Attention(self.hidden_size)
+        self.attention = Attention(self.hidden_size, birectional=self.bidirectional)
         
         # Selecting the appropriate RNN cell type
         if self.cell_type == 'gru':
-            self.rnn_cell = nn.GRU(input_size= self.hidden_size,
+            self.rnn_cell = nn.GRU(input_size= self.input_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
                                    batch_first=True)
         elif self.cell_type == 'lstm':
-            self.rnn_cell = nn.LSTM(input_size= self.hidden_size,
+            self.rnn_cell = nn.LSTM(input_size= self.input_size,
                                     hidden_size= self.hidden_size,
                                     num_layers= self.num_layers,
                                     batch_first=True)
         else:
-            self.rnn_cell = nn.RNN(input_size= self.hidden_size,
+            self.rnn_cell = nn.RNN(input_size= self.input_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
                                    batch_first=True)
@@ -90,6 +92,9 @@ class Decoder(nn.Module):
         # Embedding input data
         embedded =  self.dropout(self.embedding(data))
         
+        if self.bidirectional:
+            hidden = hidden.sum(dim=0).unsqueeze(0)
+        
         # Optional attention usage
         if self.use_attention:
             # Attention implementation
@@ -103,9 +108,13 @@ class Decoder(nn.Module):
             input_rnn = embedded
         
         # Passing embedded data through the RNN
+        
         output, hidden = self.rnn_cell(input_rnn, hidden)
         
         # Pass the outputs through the linear layer
         output = self.out(output)
         
         return output, hidden, attn_weights
+    
+    def beam_search_decoding():
+        pass

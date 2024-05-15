@@ -10,8 +10,8 @@ def inference(word, lang):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    encoder = torch.load("./model/outputs/encoder.h5").to(device)
-    decoder = torch.load("./model/outputs/decoder.h5").to(device)
+    encoder = torch.load(f"./model/outputs/{lang}_encoder.h5").to(device)
+    decoder = torch.load(f"./model/outputs/{lang}_decoder.h5").to(device)
     encoder.eval()
     decoder.eval()
     
