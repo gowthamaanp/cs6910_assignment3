@@ -76,15 +76,15 @@ def train(config):
     batch_size = config['batch_size']
     hidden_size = config['hidden_size']
     embedding_size = config['embedding_size']
-    num_layers_encoder = config['en_layers']
-    num_layers_decoder = config['de_layers']
+    num_layers_encoder = config['encoder_layers']
+    num_layers_decoder = config['decoder_layers']
     cell_type = config['cell']
     bidirectional = config['bidirectional']
     dropout = config['dropout']
     epochs = config['epochs']
     use_attention = config['use_attention']
     lang = config['lang']
-    beam_size = config['beam_size']
+    beam_width = config['beam_width']
     
     print("Loading data...")
     
@@ -167,4 +167,8 @@ def train(config):
             accuracy_char_valid = 0
             accuracy_word_train = 0
             accuracy_word_valid = 0
+    
+    torch.save(encoder, f"./model/outputs/{config['lang']}_encoder.h5")
+    torch.save(decoder, f"./model/outputs/{config['lang']}_decoder.h5")
+    
     return encoder, decoder, training_loss, validation_loss, [training_char_accuracy, training_word_accuracy], [validation_char_accuracy, validation_word_accuracy]
