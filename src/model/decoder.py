@@ -8,8 +8,8 @@ from ..utils.config import *
 class Decoder(nn.Module):
     def __init__(self, output_size, hidden_size ,
                        cell_type = 'gru', num_layers = 1,
-                       bidirectional =False, use_attention =  False,
-                       dropout = 0):
+                       use_attention =  False,
+                       dropout = 0, device = 'cpu'):
         super(Decoder, self).__init__()
         
         # Initializing parameters
@@ -17,7 +17,8 @@ class Decoder(nn.Module):
         self.hidden_size = hidden_size
         self.cell_type = cell_type
         self.num_layers = num_layers  
-        self.use_attention = use_attention    
+        self.use_attention = use_attention 
+        self.device = device   
         
         # Embedding layer to convert input indices to embeddings
         self.embedding = nn.Embedding(self.output_size, self.hidden_size)
@@ -33,19 +34,16 @@ class Decoder(nn.Module):
             self.rnn_cell = nn.GRU(input_size= self.hidden_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
-                                   bidirectional= bidirectional, 
                                    batch_first=True)
         elif self.cell_type == 'lstm':
             self.rnn_cell = nn.LSTM(input_size= self.hidden_size,
                                     hidden_size= self.hidden_size,
                                     num_layers= self.num_layers,
-                                    bidirectional= bidirectional, 
                                     batch_first=True)
         else:
             self.rnn_cell = nn.RNN(input_size= self.hidden_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
-                                   bidirectional= bidirectional, 
                                    batch_first=True)
         
         # Linear output layer

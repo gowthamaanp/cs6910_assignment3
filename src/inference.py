@@ -8,8 +8,10 @@ def inference(word, lang):
     src_char2idx = CharSet(language='eng').char2index
     trg_idx2char = CharSet(language=lang).index2char
 
-    encoder = torch.load("./model/outputs/encoder.h5")
-    decoder = torch.load("./model/outputs/decoder.h5")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    encoder = torch.load("./model/outputs/encoder.h5").to(device)
+    decoder = torch.load("./model/outputs/decoder.h5").to(device)
     encoder.eval()
     decoder.eval()
     
@@ -18,6 +20,8 @@ def inference(word, lang):
         in_seq = word.lower().ljust(MAX_SEQUENCE_LENGTH-1, '#') + '$'
         for j, char in enumerate(in_seq):
             input_tensor[0, j] = src_char2idx.get(char)
+
+        input_tensor = input_tensor.to(device)
             
         encoder_outputs, encoder_hidden = encoder(input_tensor)
         decoder_outputs, _, decoder_attn = decoder(encoder_outputs, encoder_hidden)

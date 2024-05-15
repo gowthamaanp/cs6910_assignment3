@@ -88,7 +88,7 @@ def train(config):
     
     print("Loading data...")
     
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.cuda.empty_cache()
     
     dataset = TransliterationDataset(src_lang='eng', trg_lang=lang)    
@@ -100,12 +100,11 @@ def train(config):
     encoder = Encoder(input_size=dataset.src_charset.get_length(), embedding_size=embedding_size, 
                       hidden_size=hidden_size, cell_type = cell_type, num_layers = num_layers_encoder,
                       bidirectional =bidirectional,
-                      dropout = dropout, device='cpu').to(device) 
+                      dropout = dropout).to(device) 
     
     decoder =  Decoder(output_size=dataset.trg_charset.get_length(), hidden_size=hidden_size,
                        cell_type = cell_type, num_layers = num_layers_decoder,
-                       bidirectional =bidirectional, use_attention= use_attention,
-                       dropout = dropout, device='cpu').to(device)
+                       use_attention= use_attention, dropout = dropout, device = device).to(device)
     
     log_frequency = 1
     start = time.time()
