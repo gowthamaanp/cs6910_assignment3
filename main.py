@@ -3,21 +3,22 @@ import argparse
 from src.train import train
 from src.inference import inference
 from src.test import test
+from src.sweep import sweep
 
 def main(command_line=None):
     
-    WANDB_PROJECT = "CS6910_AS1"
+    WANDB_PROJECT = "CS6910_AS3"
     WANDB_ENTITY = "ed23s037"
     
     default_train_config = {
         'embedding_size': 64,
-        'en_layers': 2,
-        'de_layers': 2,
+        'encoder_layers': 2,
+        'decoder_layers': 2,
         'hidden_size': 1024,
         'cell': 'gru',
         'bidirectional': False,
         'dropout': 0.4,
-        'beam_width': 5,
+        'beam_width': 3,
         'learning_rate': 1e-3,
         'batch_size': 256,
         'epochs': 15,
@@ -53,6 +54,11 @@ def main(command_line=None):
     parser_infer.add_argument("-iw", "--input_word", metavar='', type=str, default="thamizh", help="Word to transliterate(Input)")
     parser_infer.add_argument("-ln", "--lang", metavar='', type=str, default="tam", help="Language of the Transliteration taks(eng -> lang)")
     
+    parser_sweep = subparsers.add_parser("sweep", help="Hyperparameter Sweep using Wandb", description="Hyperparameter Sweep")
+    parser_sweep.add_argument("-wp", "--wandb_project", metavar='', type=str, default=WANDB_PROJECT, help="Wandb project name")
+    parser_sweep.add_argument("-we", "--wandb_entity", metavar='', type=str, default=WANDB_ENTITY, help="Wandb entity name")
+    parser_sweep.add_argument("-ak", "--api_key", metavar='', type=str, help="Wandb API key", required=True)
+    
     args = parser.parse_args(command_line)
     default_train_config.update(vars(args))
 
@@ -66,6 +72,9 @@ def main(command_line=None):
     elif args.func=="infer":
         _, output_word, _ = inference(args.input_word, default_train_config['lang'])
         print(output_word)
+    
+    elif args.func=="sweep":
+        sweep(api_key=args.api_key, project=args.wandb_project, entity=args.wandb_entity)
         
     else:
         parser.print_help()
