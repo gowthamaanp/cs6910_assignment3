@@ -12,7 +12,7 @@ from .utils.helpers import *
 
 # Count correctly transliterated words
 def count_correct_words(y, y_pred):
-    return ((y==y_pred).sum(dim=0)==y.size(1)-1).sum()
+    return ((y==y_pred).sum(dim=0)>=y.size(1)-1).sum()
 
 # Single epoch training function
 def train_epoch(dataloader, encoder, decoder, enc_optimizer, dec_optimizer, criterion, device):

@@ -63,6 +63,11 @@ def main(command_line=None):
     default_train_config.update(vars(args))
 
     if args.func=="train":
+        assert args.encoder_layers == args.decoder_layers, "Number of layers in encoder and decoder must be equal"
+        # Training Parameters
+        print("Parameters:")
+        for key, value in default_train_config.items():
+            print(f"{key}: {value}")
         _, _, training_loss, validation_loss, training_accuarcy, validation_accuarcy = train(default_train_config)
         
     elif args.func=="eval":

@@ -59,76 +59,67 @@ class Decoder(nn.Module):
         decoder_hidden = encoder_hidden
         decoder_outputs = []
         attentions = []
-        
-        if self.beam_width >= 1:
-            decoder_outputs = self.beam_search_decoding(encoder_outputs, decoder_hidden)
-        
-        else:
-            # Pass the encoder outputs/hidden state through the decoder
-            for i in range(0, MAX_SEQUENCE_LENGTH):
-                # Forward pass
-                decoder_output, decoder_hidden, attn_weights = self.forward_step(
-                    decoder_input, decoder_hidden, encoder_outputs
-                )
-                decoder_outputs.append(decoder_output)
-                
-                if self.use_attention:           
-                    attentions.append(attn_weights)
-                    
-                # Teacher forcing
-                if target_tensor is not None:
-                    # Teacher forcing: Feed the target as the next input
-                    decoder_input = target_tensor[:, i].unsqueeze(1) # Teacher forcing
-                else:
-                    # Without teacher forcing: use its own predictions as the next input
-                    _, topi = decoder_output.topk(1)
-                    decoder_input = topi.squeeze(-1).detach()  # detach from history as input
-        
-            decoder_outputs = torch.cat(decoder_outputs, dim=1)
-            # Apply softmax to determine the character
-            decoder_outputs = F.log_softmax(decoder_outputs, dim=-1)
+
+        # Pass the encoder outputs/hidden state through the decoder
+        for i in range(0, MAX_SEQUENCE_LENGTH):
+            # Forward pass
+            decoder_output, decoder_hidden, attn_weights = self.forward_step(
+                decoder_input, decoder_hidden, encoder_outputs)  
+            decoder_outputs.append(decoder_output)
             
-            if self.use_attention:
-                attentions = torch.cat(attentions, dim=1)
+            if self.use_attention:           
+                attentions.append(attn_weights)
+                
+            # Teacher forcing
+            if target_tensor is not None:
+                # Teacher forcing: Feed the target as the next input
+                decoder_input = target_tensor[:, i].unsqueeze(1) # Teacher forcing
+            else:
+                # Without teacher forcing: use its own predictions as the next input
+                _, topi = decoder_output.topk(1)
+                decoder_input = topi.squeeze(-1).detach()  # detach from history as input
+    
+        decoder_outputs = torch.cat(decoder_outputs, dim=1)
+        # Apply softmax to determine the character
+        decoder_outputs = F.log_softmax(decoder_outputs, dim=-1)
+        
+        if self.use_attention:
+            attentions = torch.cat(attentions, dim=1)
 
         return decoder_outputs, decoder_hidden, attentions
     
-    # Performs beam search decoding
     def beam_search_decoding(self, encoder_outputs, encoder_hidden):
-        
+        # Initialize variables
         batch_size = encoder_outputs.size(0)
-        
-        # Initialize the beam with the start token and its log probability
-        decoder_input = torch.tensor([SOS_TOKEN] * batch_size, device=self.device).unsqueeze(1)
+        decoder_input = torch.empty(batch_size, 1, dtype=torch.long, device=self.device).fill_(SOS_TOKEN)
         decoder_hidden = encoder_hidden
-        log_probs = torch.zeros(batch_size, 1, device=self.device)
-        
-        # Initialize the beam with the first sequence
-        beam = [(decoder_input, log_probs, decoder_hidden)]
-        
-        # Iterate over the maximum length
-        for _ in range(MAX_SEQUENCE_LENGTH):
-            new_beam = []
+        decoder_outputs = []
+        attentions = []
+
+        # Pass the encoder outputs/hidden state through the decoder
+        for i in range(0, MAX_SEQUENCE_LENGTH):
+            # Forward pass
+            decoder_output, decoder_hidden, attn_weights = self.forward_step(
+                decoder_input, decoder_hidden, encoder_outputs
+            )
+            decoder_outputs.append(decoder_output)
             
-            # Iterate over the current beam
-            for seq, log_prob, hidden in beam:
-                decoder_output, new_hidden, _ = self.forward_step(seq[:, [-1]], hidden, encoder_outputs)
-                log_probs = log_prob + decoder_output.squeeze(1)
-                
-                # Find the top beam_width candidates
-                top_log_probs, top_indices = log_probs.topk(self.beam_width, dim=-1)
-                
-                # Update the beam with the new candidates
-                for new_log_prob, new_index in zip(top_log_probs, top_indices):
-                    new_seq = torch.cat([seq, new_index.unsqueeze(1)], dim=1)
-                    new_beam.append((new_seq, new_log_prob, new_hidden))
+            if self.use_attention:           
+                attentions.append(attn_weights)
             
-            # Sort the beam by log probability and keep the top beam_width sequences
-            beam = sorted(new_beam, key=lambda x: x[1], reverse=True)[:self.beam_width]
-        
-        # Return the decoded sequences
-        return [seq.tolist() for seq, _, _ in beam]
+            # Without teacher forcing: use its own predictions as the next input
+            _, topi = decoder_output.topk(1)
+            decoder_input = topi.squeeze(-1).detach()  # detach from history as input
     
+        decoder_outputs = torch.cat(decoder_outputs, dim=1)
+        # Apply softmax to determine the character
+        decoder_outputs = F.log_softmax(decoder_outputs, dim=-1)
+        
+        if self.use_attention:
+            attentions = torch.cat(attentions, dim=1)
+
+        return decoder_outputs, decoder_hidden, attentions   
+
     def forward_step(self, data, hidden, encoder_outputs):
         # Embedding input data
         embedded =  self.dropout(self.embedding(data))
