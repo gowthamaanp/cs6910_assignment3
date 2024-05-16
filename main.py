@@ -12,8 +12,7 @@ def main(command_line=None):
     
     default_train_config = {
         'embedding_size': 64,
-        'encoder_layers': 2,
-        'decoder_layers': 2,
+        'num_layers': 2,
         'hidden_size': 1024,
         'cell': 'gru',
         'bidirectional': False,
@@ -36,15 +35,14 @@ def main(command_line=None):
     parser_train.add_argument("-bs", "--batch_size", metavar='', type=int, default=256, help="Batch size")
     parser_train.add_argument("-lr", "--learning_rate", metavar='', type=float, default=1e-3, help="Learning rate")
     parser_train.add_argument("-es", "--embedding_size", metavar='', type=int, default=32, help="Input Embedding Size")
-    parser_train.add_argument("-el", "--encoder_layers", metavar='', type=int, default=2, help="Number of layers in the encoder")
-    parser_train.add_argument("-dl", "--decoder_layers", metavar='', type=int, default=2, help="Number of layers in the decoder")
+    parser_train.add_argument("-nl", "--num_layers", metavar='', type=int, default=2, help="Number of layers in the encoder and decoder")
     parser_train.add_argument("-hs", "--hidden_size", metavar='', type=int, default=1024, help="Number of hidden layers in the model")
     parser_train.add_argument("-ce", "--cell", metavar='', type=str, default="gru", help="Type of RNN Cell to be used in the model (RNN, GRU, LSTM)")
-    parser_train.add_argument("-bi", "--bidirectional", metavar='', type=bool, default=False, help="Use bidirectional encoding in the Encoder")
+    parser_train.add_argument("-bi", "--bidirectional", metavar='', type=lambda x: (str(x).lower() == 'true'), default=False, help="Use bidirectional encoding in the Encoder",)
     parser_train.add_argument("-dr", "--dropout", metavar='',type=float, default=0.3, help="Dropout probability")
     parser_train.add_argument("-bm", "--beam_width", metavar='', type=int, default=3, help="Beam width for Beam Search Decoding")
     parser_train.add_argument("-ln", "--lang", metavar='', type=str, default="tam", help="Language of the Transliteration taks(eng -> lang)")
-    parser_train.add_argument("-ua", "--use_attention", metavar='', type=bool, default=False, help="User attention")
+    parser_train.add_argument("-ua", "--use_attention", metavar='', type=lambda x: (str(x).lower() == 'true'), default=False, help="User attention")
     
     parser_eval = subparsers.add_parser("eval", help="Evaluate the trained model", description="Evaluate the model")
     parser_eval.add_argument("-bs", "--batch_size", metavar='', type=int, default=256, help="Batch size")
@@ -63,7 +61,6 @@ def main(command_line=None):
     default_train_config.update(vars(args))
 
     if args.func=="train":
-        assert args.encoder_layers == args.decoder_layers, "Number of layers in encoder and decoder must be equal"
         # Training Parameters
         print("Parameters:")
         for key, value in default_train_config.items():

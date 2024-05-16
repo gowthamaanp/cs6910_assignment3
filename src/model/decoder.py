@@ -30,27 +30,30 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
         
         # Bahdanau attention head
-        self.attention = Attention(self.hidden_size, birectional=self.bidirectional)
+        self.attention = Attention(self.hidden_size, bidirectional=self.bidirectional)
         
         # Selecting the appropriate RNN cell type
         if self.cell_type == 'gru':
             self.rnn_cell = nn.GRU(input_size= self.input_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
-                                   batch_first=True)
+                                   batch_first=True, 
+                                   bidirectional = self.bidirectional)
         elif self.cell_type == 'lstm':
             self.rnn_cell = nn.LSTM(input_size= self.input_size,
                                     hidden_size= self.hidden_size,
                                     num_layers= self.num_layers,
-                                    batch_first=True)
+                                    batch_first=True,
+                                    bidirectional = self.bidirectional)
         else:
             self.rnn_cell = nn.RNN(input_size= self.input_size,
                                    hidden_size= self.hidden_size,
                                    num_layers= self.num_layers,
-                                   batch_first=True)
+                                   batch_first=True,
+                                   bidirectional = self.bidirectional)
         
         # Linear output layer
-        self.out = nn.Linear(hidden_size, output_size)
+        self.out = nn.Linear((2 if self.bidirectional else 1)*hidden_size, output_size)
         
     def forward(self, encoder_outputs, encoder_hidden, target_tensor=None):
         # Initialize variables
@@ -122,16 +125,13 @@ class Decoder(nn.Module):
 
     def forward_step(self, data, hidden, encoder_outputs):
         # Embedding input data
-        embedded =  self.dropout(self.embedding(data))
-        
-        if self.bidirectional:
-            hidden = hidden.sum(dim=0).unsqueeze(0)
+        embedded =  self.dropout(self.embedding(data)) 
         
         # Optional attention usage
         if self.use_attention:
             # Attention implementation
             # Reference: https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html
-            query = hidden.permute(1, 0, 2)
+            query = hidden.sum(dim=0).unsqueeze(0).permute(1, 0, 2)
             context, attn_weights = self.attention(query, encoder_outputs)
             input_rnn = torch.cat((embedded, context), dim=2)
         else:

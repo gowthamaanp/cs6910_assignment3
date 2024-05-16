@@ -8,14 +8,21 @@ Reference: https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutori
 '''
 
 class Attention(nn.Module):
-    def __init__(self, hidden_size, birectional=False):
+    def __init__(self, hidden_size, bidirectional=False):
         super(Attention, self).__init__()
         # Linear transformations for query, keys, and combining them
         self.W = nn.Linear(hidden_size, hidden_size)  # Transforming query
-        self.U = nn.Linear((2 if birectional else 1)*hidden_size, hidden_size)  # Transforming keys
+        self.U = nn.Linear((2 if bidirectional else 1)*hidden_size, hidden_size)  # Transforming keys
         self.V = nn.Linear(hidden_size, 1)            # Combining query and keys
 
     def forward(self, query, keys):
+        
+        print(query.shape)
+        print(keys.shape)
+        print(self.W(query).shape)
+        print(self.U(keys).shape)
+        print(torch.tanh(self.W(query) + self.U(keys)).shape)
+        print("-------")
         # Calculating attention scores
         scores = self.V(torch.tanh(self.W(query) + self.U(keys)))
         # Squeezing unnecessary dimension and adding a new dimension
