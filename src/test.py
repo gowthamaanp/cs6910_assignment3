@@ -44,7 +44,7 @@ def test(lang, batch_size, save_predictions=False):
         char_accuracy += accuracy.item()
     
     # Calculate word wise accuarcy
-    word_accuracy = ((y==y_pred).sum(dim=0)==y.size(1)-1).sum()
+    word_accuracy = ((y==y_pred).sum(dim=0)>=y.size(1)-1).sum()
     char_accuracy = char_accuracy/len(test_dataloader)
     
     if save_predictions:

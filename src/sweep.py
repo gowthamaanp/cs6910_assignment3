@@ -8,7 +8,7 @@ def wandb_sweep_runner():
         # Get training config
         config = wandb.config
         # Sweep run name
-        run.name = f"ce_{config['cell']}_el_{config['encoder_layers']}_dl_{config['decoder_layers']}_lr_{config['learning_rate']}_bs_{config['batch_size']}_hs_{config['hidden_size']}"
+        run.name = f"ce_{config['cell']}_nl_{config['num_layers']}_lr_{config['learning_rate']}_bs_{config['batch_size']}_hs_{config['hidden_size']}"
         # Train model
         encoder, decoder, _, _, _, _ = train(config=config, is_sweep=True)
         del encoder
