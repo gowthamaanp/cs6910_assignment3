@@ -1,22 +1,31 @@
 import torch
 from torch.utils.data import DataLoader
+import pandas as pd
 
 from .data.dataset import TransliterationDataset
 
+def tensor_row_to_string(num_to_char, tensor_row):
+    """
+    Convert a tensor row (list of numbers) to a string
+    """
+    word = ''.join(num_to_char[num.item()] for num in tensor_row if num.item() in num_to_char)
+    return word
+
 # Testing the trained model
-def test(lang, batch_size, save_predictions=False):
+def test(lang, batch_size, save_predictions=True):
     # Prepare testing data
     dataset = TransliterationDataset(src_lang='eng', trg_lang=lang)   
     test_dataloader = DataLoader(dataset.test_dataset, batch_size=batch_size, shuffle=True)
     
     # Load the encoder and decoder
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    encoder = torch.load(f"./model/outputs/{lang}_encoder.h5").to(device)
-    decoder = torch.load(f"./model/outputs/{lang}_decoder.h5").to(device)
+    encoder = torch.load(f"./model/outputs/{lang}_seq_encoder.h5").to(device)
+    decoder = torch.load(f"./model/outputs/{lang}_seq_decoder.h5").to(device)
     encoder.eval()
     decoder.eval()
     
     # Initialize variables
+    x = None
     y = None
     y_pred = None
     char_accuracy = 0
@@ -31,9 +40,11 @@ def test(lang, batch_size, save_predictions=False):
         predicted_tensor = torch.argmax(decoder_outputs, dim=2)
 
         if y is not None:
+            x = torch.cat((x, input_tensor), dim=0)
             y = torch.cat((y, target_tensor), dim=0)
             y_pred = torch.cat((y_pred, predicted_tensor), dim=0)
         else:
+            x = input_tensor
             y = target_tensor
             y_pred = predicted_tensor
         
@@ -48,7 +59,19 @@ def test(lang, batch_size, save_predictions=False):
     char_accuracy = char_accuracy/len(test_dataloader)
     
     if save_predictions:
-        # save the predictions to a csv file.
-        pass
+        # Assuming your tensor is called 'tensor'
+        eng_words = [tensor_row_to_string(dataset.src_charset.index2char, row) for row in x]
+        tam_words = [tensor_row_to_string(dataset.trg_charset.index2char, row) for row in y]
+        tam1_words = [tensor_row_to_string(dataset.trg_charset.index2char, row) for row in y_pred]
+
+        # Create a pandas DataFrame
+        df = pd.DataFrame({
+            'Eng': eng_words,
+            'Tam': tam_words,
+            'Tam1': tam1_words
+        })
+
+        # Save the DataFrame to a CSV file
+        df.to_csv('tensors_seq.csv', index=False)
     
-    return char_accuracy, word_accuracy.item()*100
+    return char_accuracy, word_accuracy.item()

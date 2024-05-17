@@ -16,13 +16,6 @@ class Attention(nn.Module):
         self.V = nn.Linear(hidden_size, 1)            # Combining query and keys
 
     def forward(self, query, keys):
-        
-        print(query.shape)
-        print(keys.shape)
-        print(self.W(query).shape)
-        print(self.U(keys).shape)
-        print(torch.tanh(self.W(query) + self.U(keys)).shape)
-        print("-------")
         # Calculating attention scores
         scores = self.V(torch.tanh(self.W(query) + self.U(keys)))
         # Squeezing unnecessary dimension and adding a new dimension
