@@ -13,9 +13,6 @@ This repository contains all files for the third assignment of the CS6910 - Fund
 - [Tools and Libraries Used](#tools-and-libraries-used)
   - [Installation](#installation)
 - [Usage](#usage)
-  - [Running Manually](#running-manuallyn)
-  - [Running a Sweep using Wandb](#running-a-sweep-using-wandb)
-  - [Customization](#customization)
 
 ## Task
 
@@ -23,8 +20,9 @@ The task is to use recurrent neural networks to build a transliteration system
 
 ## Submission
 
-My WandB project:
-My WandB report:
+My WandB project: https://wandb.ai/ed23s037/CS6910_AS3
+
+My WandB report: https://api.wandb.ai/links/ed23s037/8y7zo8uw
 
 ## Dataset
 
@@ -58,28 +56,22 @@ By installing the listed packages, you can ensure that all necessary dependencie
 
 ## Usage
 
-### Running Manually
-
-To execute the file manually, use the following command:
+The main.py file is the entry point to all the functions. Run the following command to see the options:
 
 ```sh
-$
+$ python main.py
 ```
 
-You can also modify the following list of available options along with brief information about each:
+With this file you can train, evaluate, infer(single word) and sweep the model. Go through the file for more details on parameters for every configuration. The common template is the following:
 
 ```sh
-$
+$ python main.py <func> <parameters>
 ```
 
-#### Options
-
-### Running a Sweep using Wandb
+For example to get help on training the model use the following command:
 
 ```sh
-$
+$ python main.py train -h
 ```
-
-### Customization
 
 </div>
